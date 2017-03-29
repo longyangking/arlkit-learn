@@ -59,8 +59,19 @@ class BPMF:
             print 'Train stop. {reason}'.format(reason='Maximum Iteration!')
 
     def predict(self,data):
+        userfeatures = self.U[data[:,0],:]
+        itemfeatures = self.V[data[:,1],:]
+        preds = np.sum(userfeatures*itemfeatures,axis=1) + self.meanrating
+
+        if self.maxrating:
+            preds[preds > self.maxrating] = self.maxrating
         
-    
+        if self.minrating:
+            preds[preds < self.minrating] = self.minrating
+        
+        return preds
+
+
     def __updateitemparams(self):
     
     def __updateuserparams(self):
