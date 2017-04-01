@@ -1,8 +1,13 @@
 import numpy as np
 import scipy.sparse as sparse
+from numpy.linalg import inv,cholesky
+from numpy.random import RandomState
+from scipy.stats import wishart
 import utils
 
 class BPMF:
+    '''
+    '''
     def __init__(self,data,nusers,nitems,
         nanvalue=0, nfeatures=10,
         copy=True,tolerance=1.0*1.0**-3,
@@ -71,8 +76,11 @@ class BPMF:
         
         return preds
 
-
     def __updateitemparams(self):
+        N = self.nitems
+        xbar = np.mean(self.U,axis=0)
+        xbar = np.reshape(xbar,(self.nfeatures,1))
+        sbar = np.cov(self.V.T)
     
     def __updateuserparams(self):
     
