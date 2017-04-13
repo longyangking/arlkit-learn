@@ -6,16 +6,16 @@ def record2matrix(record,nusers,nitems):
     if record[0,0] == 1 and record[0,1] == 1:
         record[:,(0,1)] = 0
 
-    #data = record[:,2]
-    #rowindex = record[:,0]
-    #colindex = record[:,1]
-    #shape = (nusers,nitems)
-    #return sparse.csr_matrix((data,(rowindex,colindex)),shape=shape)
+    data = record[:,2]
+    rowindex = record[:,0]
+    colindex = record[:,1]
+    shape = (nusers,nitems)
+    return sparse.csr_matrix((data,(rowindex,colindex)),shape=shape)
 
-    matrix = np.zeros((nusers,nitems))
-    pos = (record[:,0].astype(int),record[:,1].astype(int))
-    matrix[pos] = record[:,2] 
-    return matrix
+    #matrix = np.zeros((nusers,nitems))
+    #pos = (record[:,0].astype(int),record[:,1].astype(int))
+    #matrix[pos] = record[:,2] 
+    #return matrix
 
 def cv(record,ratio=0.1):
     (M,N) = record.shape
@@ -29,11 +29,23 @@ def RMSE(prediction,truth,pos=None):
     '''
     Calculate Root Mean Square Error (RMSE)
     '''
+    #if pos is None:
+    #    pos = np.where(truth != 0)
+    
+    #filterpred = prediction[pos]
+    #filtertruth = truth[pos]
+    if sparse.issparse(prediction):
+        prediction = prediction.toarray()       # TODO The algorithm will support Sparse Matrix in the future
+
+    if sparse.issparse(truth):                  # TODO The algorithm will support Sparse Matrix in the future
+        truth = truth.toarray()
+
     if pos is None:
-        pos = np.where(truth != 0)
+        pos = truth.nonzero()
     
-    filterpred = prediction[pos]
-    filtertruth = truth[pos]
+    prediction = prediction[pos]
+    truth = truth[pos]
+    nsample = truth.shape[0]
     
-    error = np.sqrt(np.sum(np.square(np.abs(filterpred-filtertruth))))
+    error = np.sqrt(np.sum(np.square(np.abs(prediction - truth)))/(nsample-1))
     return error

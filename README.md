@@ -12,6 +12,7 @@ Coming soon
 ## Requirements
 + Numpy
 + Pandas
++ Scipy
 
 ## E-mail
 longyang_123@yeah.net  

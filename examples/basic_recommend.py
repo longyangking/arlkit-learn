@@ -20,7 +20,7 @@ if __name__ == '__main__':
     traindata = RE.utils.record2matrix(trainratings,nusers,nitems)
     testdata = RE.utils.record2matrix(testratings,nusers,nitems)
 
-    re = RE.SCR(traindata,selfconsistence=False)
+    re = RE.SCR(traindata,selfconsistence=False,verbose=True)
     re.train()
     userpred,itempred = re.predict(traindata)
 

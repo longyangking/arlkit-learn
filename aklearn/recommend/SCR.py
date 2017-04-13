@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import scipy.sparse as sparse
 import utils
 
 class SCR:
@@ -9,10 +10,14 @@ class SCR:
             self.trainmatrix = matrix.copy()
         else:
             self.trainmatrix = matrix
+        
+        if sparse.issparse(self.trainmatrix):                   # TODO The algorithm will support Sparse Matrix in the future
+            self.trainmatrix = self.trainmatrix.toarray()
 
         self.copy = copy
         self.format = format
         (Nusers,Nitems) = self.trainmatrix.shape
+
         self.nusers = Nusers
         self.nitems = Nitems
 
@@ -58,6 +63,7 @@ class SCR:
         for i in range(self.nitems):
             for j in range(i+1,self.nitems):
                 self.itemsimilarity[i,j] = self.cosinesimilarity(self.trainmatrix[:,i],self.trainmatrix[:,j])
+
         self.itemsimilarity = self.itemsimilarity + self.itemsimilarity.transpose()
         for i in range(self.nitems):
             self.itemsimilarity[i,i] = self.cosinesimilarity(self.trainmatrix[:,i],self.trainmatrix[:,i])
@@ -74,6 +80,9 @@ class SCR:
         else:
             data = inputmatrix
 
+        if sparse.issparse(data):               # TODO The algorithm will support Sparse Matrix in the future
+            data = data.toarray()
+
         nanpos = np.where(data!=data)
         data[nanpos] = self.nanvalue
 
@@ -85,10 +94,11 @@ class SCR:
         while (drmse is None) or (drmse > self.tolerance):          
             meanusermatrix = np.mean(userdata,axis=1)
             usermatrix = userdata - meanusermatrix[:,np.newaxis]
-
             # Singular point
             userpred = meanusermatrix[:,np.newaxis]\
                 + self.usersimilarity.dot(usermatrix)/np.array([np.abs(self.usersimilarity).sum(axis=1)]).T
+
+            #userpred = self.usersimilarity.dot(userdata)/np.array([np.abs(self.usersimilarity).sum(axis=1)]).T
 
             if not self.selfconsistence:
                 break
