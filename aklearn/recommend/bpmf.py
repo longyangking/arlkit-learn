@@ -11,15 +11,15 @@ class BPMF:
     '''
     def __init__(self,nusers,nitems,nfeatures=10,
         beta=2.0,betauser=2.0,dfuser=None,betaitem=2.0,dfitem=None,
-        tolerance=1.0*1.0**-3,nanvalue=0,
+        tolerance=1.0*1.0**-6,nanvalue=0,
         seed=None,maxrating=None,minrating=None,
         verbose=False,parallelized=False):
 
         self.nusers = nusers
         self.nitems = nitems
-        self.nfeatures = self.nfeatures
+        self.nfeatures = nfeatures
 
-        self.randstate = RandomState(seed)
+        self.randstate = RandomState(seed) if seed is not None else RandomState(0)
         self.nanvalue = nanvalue
 
         self.tolerance = tolerance
@@ -27,7 +27,7 @@ class BPMF:
         self.maxrating = maxrating
 
         self.verbose = verbose
-        self.parallelized
+        self.parallelized = parallelized
 
         # Bayesian Probabilistic Matrix Factorization
         self.beta = beta
@@ -55,7 +55,7 @@ class BPMF:
         self.__meanrating = np.mean(ratings[:,2])
 
         # TODO this shall be sparse matrix
-        self.__ratings_csr = utils.record2matrix(record=self.data,nusers=self.nusers,nitems=self.nitems)
+        self.__ratings_csr = utils.record2matrix(record=ratings,nusers=self.nusers,nitems=self.nitems)
         self.__ratings_csc = self.__ratings_csr.tocsc()
         
         lastRMSE = None
@@ -72,6 +72,8 @@ class BPMF:
 
             if lastRMSE and self.verbose:
                 print 'RMSE of {iter}th epoch: {rmse}'.format(iter=i,rmse=newRMSE)
+                lastRMSE = newRMSE
+                continue
 
             if lastRMSE and np.abs(newRMSE - lastRMSE) < self.tolerance:
                 print 'Converge with RMSE: {rmse}'.format(rmse=newRMSE)
@@ -79,8 +81,9 @@ class BPMF:
 
             lastRMSE = newRMSE
         
-        if self.verbose:
-            print 'Train stop. {reason}'.format(reason='Maximum Iteration!')
+        else:
+            if self.verbose:
+                print 'Train stop. {reason}'.format(reason='Maximum Iteration!')
 
         # I always think the following code is amazing
         return self
@@ -103,7 +106,7 @@ class BPMF:
 
     def __updateitemparams(self):
         N = self.nitems
-        Xbar = np.mean(self.U,axis=0)
+        Xbar = np.mean(self.itemfeatures,axis=0)
         Xbar = np.reshape(Xbar,(self.nfeatures,1))
         Sbar = np.cov(self.itemfeatures.T)
         normXbar = Xbar - self.muitem
@@ -112,7 +115,7 @@ class BPMF:
         WIpost = inv(inv(self.WIitem) + N*Sbar + np.dot(normXbar,normXbar.T)*(N*self.betaitem)/(self.betaitem + N))
         WIpost = (WIpost + WIpost.T)/2.0
         dfpost = self.dfitem + N
-        self.alphaitem = wishart.rvs(dfpost, WIpost, 1.0, self.randstate)
+        self.alphaitem = wishart.rvs(dfpost, WIpost, 1, self.randstate)
 
         # Update Mu of item
         mutemp = (self.betaitem*self.muitem + N*Xbar)/(self.betaitem + N)
@@ -142,7 +145,7 @@ class BPMF:
             indices = self.__ratings_csc[:,itemid].indices
             features = self.userfeatures[indices,:]
             rating = self.__ratings_csc[:,itemid].data - self.__meanrating
-            rating = np.reshape(rating, (raing.shape[0],1))
+            rating = np.reshape(rating, (rating.shape[0],1))
 
             covar = inv(self.alphaitem + self.beta*np.dot(features.T,features))
             lam = cholesky(covar)
