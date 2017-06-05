@@ -10,6 +10,7 @@ class recognizer:
         self.dimensions = shape
         
         self.model = None
+        self.error = None
         self.verbose = verbose
     
     def recognize(self):
@@ -21,10 +22,11 @@ class recognizer:
         for i in range(len(dislistnames)):
             name = dislistnames[i]
             dist = dislist.dist(name)
-            errors[i] = dist.fit(data)
+            errors[i] = dist.fit(self.dataset)
             fitlist.append(dist)
         
         minindex = np.argmin(errors)        
+        self.error = np.min(errors)
         self.model = fitlist[minindex]
 
     def datainfo(self):
@@ -32,3 +34,6 @@ class recognizer:
         # The distribution that fit data best
         # Core parameters of distribution
         # Reliability and Quality
+        error = self.error
+        model = self.model
+        return model,error
